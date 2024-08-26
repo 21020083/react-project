@@ -1,17 +1,32 @@
 // First we need to import axios.js
-import axios, { AxiosError, AxiosRequestConfig } from 'axios'
+import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios'
 import {
   RequestMethod,
   FilterParams,
   RequestError,
   ApiResponse,
 } from './common'
+import {
+  getAccessToken,
+  getRefreshToken,
+  removeAccessToken,
+  removeRefreshToken,
+  setAccessToken,
+  setRefreshToken,
+} from '../../lib/helpers'
+
+let refreshTokenRequest: Promise<unknown> | null = null
+let isTokenExpired = false
+
+const IS_REFRESH_TOKEN = false
+const Base_url = 'http://127.0.0.1:8000/api'
+const noRefreshTokenPaths = ['/refresh-token', '/logout']
 
 const formatPrams = (params: FilterParams = {}) => {
   if (!params) return undefined
   const { page, limit, order, sort, ...otherParams } = params
   return {
-    _page: page,
+    page: page,
     _limit: limit,
     _order: order,
     _sort: sort,
@@ -33,24 +48,85 @@ const formatPrams = (params: FilterParams = {}) => {
 // Next we make an 'instance' of it
 const axiosInstance = axios.create({
   // .. where we make our configurations
-  baseURL: 'http://127.0.0.1:8000/api', // Replace with your API's base URL
-  timeout: 10000,
+  baseURL: Base_url, // Replace with your API's base URL
+  timeout: 20000,
   headers: {
     'Content-Type': 'application/json',
   },
 })
 
-// Where you would set stuff like your 'Authorization' header, etc ...
-//instance.defaults.headers.common['Authorization'] = 'AUTH TOKEN FROM INSTANCE';
+/** Refresh token */
+const refreshTokenHandle = async (): Promise<string | undefined> => {
+  try {
+    const token = getRefreshToken()
+    const res: AxiosResponse = await axios.get(`${Base_url}/refresh-token`, {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : undefined,
+      },
+    })
+    const access_token = res.data.access_token
+    if (access_token) {
+      setAccessToken(access_token)
+    }
+    // [TODO]: Set accessToken
+    // [TODO]: Set refreshToken
 
-// Also add/ configure interceptors && all the other cool stuff
-axiosInstance.interceptors.response.use(
-  function (response) {
-    return response.data ? response.data : { statusCode: response.data }
+    return access_token
+  } catch (error) {
+    removeAccessToken()
+    removeRefreshToken()
+    // [TODO]: Remove accessToken
+    // [TODO]: Remove refreshToken
+    return undefined
+  }
+}
+
+/** Pre request */
+axiosInstance.interceptors.request.use(
+  async (config) => {
+    const defaultToken = config.headers?.Authorization
+      ? String(config.headers.Authorization)
+      : undefined
+    const accessToken = defaultToken || getAccessToken()
+    if (accessToken)
+      config.headers.setAuthorization(
+        accessToken?.includes('Bearer') ? accessToken : `Bearer ${accessToken}`,
+      )
+
+    return config
   },
-  function (error) {
-    console.log('check error: ', error.name)
-    console.log('check error: ', error.response)
+  async (error) => Promise.reject(error),
+)
+
+/** Pre response */
+axiosInstance.interceptors.response.use(
+  async (response) => Promise.resolve(response),
+  async (error) => {
+    const status = error?.response?.status
+    const { url } = error.config
+    const noRefreshTokenUrls = noRefreshTokenPaths
+
+    if (noRefreshTokenUrls.includes(url)) return Promise.reject(error)
+
+    if (status === 401 && IS_REFRESH_TOKEN) isTokenExpired = true
+
+    const token = getRefreshToken()
+    if (isTokenExpired && token) {
+      refreshTokenRequest = refreshTokenRequest || refreshTokenHandle()
+
+      const newToken = await refreshTokenRequest
+      refreshTokenRequest = null
+      isTokenExpired = false
+
+      if (newToken)
+        return axiosInstance.request({
+          ...error.config,
+          headers: {
+            Authorization: newToken,
+          },
+        })
+      return Promise.reject(error)
+    }
     return Promise.reject(error)
   },
 )
@@ -87,20 +163,26 @@ const baseRequest = async (
     return Promise.reject(requestError)
   }
 }
- const sendRequest = (type: RequestMethod, apiUrl: string, data?: any, headers?: any) => {
+
+const sendRequest = (
+  type: RequestMethod,
+  apiUrl: string,
+  data?: any,
+  headers?: any,
+) => {
   return axios({
-      method: type,
-      url: apiUrl,
-      data: data,
-      headers: {
-          ...headers,
-          contentType: "application/json",
-          dataType: 'json',
-          "Access-Control-Allow-Origin": "*",
-      },
+    method: type,
+    url: apiUrl,
+    data: data,
+    headers: {
+      ...headers,
+      contentType: 'application/json',
+      dataType: 'json',
+      'Access-Control-Allow-Origin': '*',
+    },
   })
 }
 
-export const apiUrl = "https://6699bdd69ba098ed61fd35aa.mockapi.io/users"
+export const apiUrl = 'https://6699bdd69ba098ed61fd35aa.mockapi.io/users'
 
-export  { baseRequest, axiosInstance, sendRequest }
+export { baseRequest, axiosInstance, sendRequest }

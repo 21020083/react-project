@@ -1,10 +1,10 @@
 import { useContext, useEffect, useState, useRef } from 'react'
-import {axiosInstance} from '../clients/core/axiosConfig.js'
+import { axiosInstance, baseRequest } from '../clients/core/axiosConfig.js'
 import { toast, ToastContainer } from 'react-toastify'
 import { useNavigate } from 'react-router-dom'
 import { UserContext } from '../context/UserContext.jsx'
 import React from 'react'
-
+import { getAccessToken, getRefreshToken } from '../lib/helpers/index.js'
 
 export default function Login() {
   const navigator = useNavigate()
@@ -28,15 +28,23 @@ export default function Login() {
     e.preventDefault()
     setLoading(true)
     try {
-      const response = await axiosInstance.post('/login', { username, password })
-      loginContext(username, response.data.token)
-      navigator('/')  
-    } catch (err : any) {
+      const response = await baseRequest(
+        'http://127.0.0.1:8000/api/login',
+        'POST',
+        {
+          username,
+          password,
+        },
+      )
+      loginContext(username, response.access_token, response.refresh_token)
+      //navigator('/')
+    } catch (err: any) {
       // Handle login errors
-      if (err.response) {
-        error.current = err.response.data.message
+      if (err) {
+        error.current = err.message
+        console.log(error.current)
       } else {
-        error.current = err.name
+        error.current = 'unknow error'
       }
       toast.error(error.current)
     } finally {

@@ -1,31 +1,46 @@
+import {
+  removeAccessToken,
+  removeRefreshToken,
+  setAccessToken,
+  setRefreshToken,
+} from '../lib/helpers'
 import React, { ReactNode, useState } from 'react'
 
-
 interface User {
-  email: string, 
+  email: string
   auth: boolean
 }
 interface CurrentUserContextType {
-  user: User,
-  loginContext: any,
+  user: User
+  loginContext: any
   logout: () => void
 }
 
-const UserContext = React.createContext<CurrentUserContextType>({} as CurrentUserContextType)
+const UserContext = React.createContext<CurrentUserContextType>(
+  {} as CurrentUserContextType,
+)
 
-const UserProvider = ({ children } : any) => {
-  const [user, setUser] = useState({email: '', auth: false})
+const UserProvider = ({ children }: any) => {
+  const [user, setUser] = useState({ email: '', auth: false })
 
-  const loginContext = (email: string, token: string) => {
+  const loginContext = (
+    email: string,
+    access_token: string,
+    refresh_token: string,
+  ) => {
     setUser(() => ({
       email: email,
       auth: true,
     }))
-    localStorage.setItem('authToken', token)
+    setAccessToken(access_token)
+    setRefreshToken(refresh_token)
+    localStorage.setItem('authToken', access_token)
     localStorage.setItem('email', email)
   }
 
   const logout = () => {
+    removeRefreshToken()
+    removeAccessToken()
     localStorage.removeItem('authToken')
     localStorage.removeItem('email')
 
@@ -36,7 +51,7 @@ const UserProvider = ({ children } : any) => {
   }
 
   return (
-    <UserContext.Provider value={{user, loginContext, logout}}>
+    <UserContext.Provider value={{ user, loginContext, logout }}>
       {children}
     </UserContext.Provider>
   )
