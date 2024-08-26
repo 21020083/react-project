@@ -1,11 +1,27 @@
 import { toast } from 'react-toastify'
-import { sendRequest, apiUrl } from '../../clients/core/request'
-import { AxiosError, AxiosResponse } from 'axios'
+import { AxiosError } from 'axios'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useEffect, useState } from 'react'
+import client from '../../clients/core/clients'
+
+interface UserInfo {
+  name: string
+  username: string
+  email: string
+  phone_number: string
+  id: number
+}
+
+const initialVal: UserInfo = {
+  name: '',
+  username: '',
+  email: '',
+  phone_number: '',
+  id: 0,
+}
 
 export default function UserForm() {
-  const [user, setUser] = useState({ name: '', email: '' })
+  const [user, setUser] = useState<UserInfo>(initialVal)
   const [isLoading, setIsLoading] = useState(false)
 
   const { id } = useParams()
@@ -14,9 +30,10 @@ export default function UserForm() {
   useEffect(() => {
     if (id) {
       setIsLoading(true)
-      sendRequest('GET', apiUrl + '/' + id)
-        .then((response: AxiosResponse) => {
-          setUser(response.data)
+      client
+        .getUserById(id)
+        .then((response: any) => {
+          setUser(response)
           setIsLoading(false)
         })
         .catch((error: AxiosError) => {
@@ -24,8 +41,9 @@ export default function UserForm() {
         })
     }
   }, [])
+  console.log(user)
 
-  function handleSubmit(event: any) {
+  async function handleSubmit(event: any) {
     event.preventDefault()
     const formData = new FormData(event.target)
     const newUser = Object.fromEntries(formData.entries())
@@ -35,8 +53,9 @@ export default function UserForm() {
       return
     }
     if (!id) {
-      sendRequest('POST', apiUrl, newUser)
-        .then((response: AxiosResponse) => {
+      await client
+        .postUser(newUser)
+        .then(() => {
           toast.success('them user thanh cong')
           navigator('/user')
         })
@@ -44,8 +63,9 @@ export default function UserForm() {
           console.log(error)
         })
     } else {
-      sendRequest('PUT', apiUrl + '/' + id, newUser)
-        .then((response: AxiosResponse) => {
+      await client
+        .putUser(id, newUser)
+        .then(() => {
           toast.success('sua thong tin thanh cong')
           navigator('/user')
         })
@@ -54,7 +74,7 @@ export default function UserForm() {
         })
     }
   }
-  if (isLoading) return <></>
+  if (isLoading) return <h1>...Loading</h1>
 
   return (
     <>
@@ -66,26 +86,18 @@ export default function UserForm() {
       <div className="row">
         <div className="col-lg-6 mx-auto">
           <form onSubmit={(event) => handleSubmit(event)}>
-            <div className="row mb-3">
-              <label className="col-sm-4 col-form-label">Name</label>
-              <div className="col-sm-8">
-                <input
-                  className="form-control"
-                  name="name"
-                  defaultValue={user.name}
-                />
+            {Object.keys(user).map((keyName: string, i: any) => (
+              <div className="row mb-3" key={i}>
+                <label className="col-sm-4 col-form-label">{keyName}</label>
+                <div className="col-sm-8">
+                  <input
+                    className="form-control"
+                    name={keyName}
+                    defaultValue={user[keyName]}
+                  />
+                </div>
               </div>
-            </div>
-            <div className="row mb-3">
-              <label className="col-sm-4 col-form-label">Email</label>
-              <div className="col-sm-8">
-                <input
-                  className="form-control"
-                  name="email"
-                  defaultValue={user.email}
-                />
-              </div>
-            </div>
+            ))}
             <div className="row">
               <div className="offset-sm-4 col-sm-4 d-grid">
                 <button type="submit" className="btn btn-primary btn-sm me-3">

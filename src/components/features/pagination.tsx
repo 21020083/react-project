@@ -1,4 +1,3 @@
-import React from 'react'
 import classnames from 'classnames'
 import { usePagination, DOTS } from '../../lib/hooks/usePagination'
 import '../../styles/pagination.css'

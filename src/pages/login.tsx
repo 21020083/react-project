@@ -1,10 +1,8 @@
 import { useContext, useEffect, useState, useRef } from 'react'
-import { axiosInstance, baseRequest } from '../clients/core/axiosConfig.js'
-import { toast, ToastContainer } from 'react-toastify'
+import { toast } from 'react-toastify'
 import { useNavigate } from 'react-router-dom'
 import { UserContext } from '../context/UserContext.jsx'
-import React from 'react'
-import { getAccessToken, getRefreshToken } from '../lib/helpers/index.js'
+import { baseRequest } from '../clients/core/axiosConfig.js'
 
 export default function Login() {
   const navigator = useNavigate()
@@ -37,7 +35,7 @@ export default function Login() {
         },
       )
       loginContext(username, response.access_token, response.refresh_token)
-      //navigator('/')
+      navigator('/')
     } catch (err: any) {
       // Handle login errors
       if (err) {

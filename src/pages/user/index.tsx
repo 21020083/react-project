@@ -1,10 +1,9 @@
-import { useState, useEffect, memo, useRef, ReactNode } from 'react'
-import { sendRequest, apiUrl } from '../../clients/core/request'
+import { useState, useEffect, memo } from 'react'
 import { toast } from 'react-toastify'
 import CustomModal from '../../components/ui/Modal'
 import client from '../../clients/core/clients'
 
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import useDebound from '../../lib/hooks/useDebound'
 import { Input } from '../../components/core/input'
 import {
@@ -15,8 +14,6 @@ import {
   TableHeader,
   TableRow,
 } from '../../components/core/table'
-import { baseRequest } from '../../clients/core/axiosConfig'
-import { RequestMethod } from '../../clients/core/common'
 import CustomPagination from '../../components/features/pagination'
 
 interface UserType {
@@ -25,8 +22,6 @@ interface UserType {
   email: string
 }
 function UserList() {
-  const navigator = useNavigate()
-
   const [isLoading, setIsLoading] = useState<boolean>(true)
 
   const [currentPage, setCurrentPage] = useState(1)
@@ -35,7 +30,6 @@ function UserList() {
 
   const [users, setUsers] = useState(Array<UserType>)
   const [filter, setFilter] = useState('')
-  const [Form, SetShowForm] = useState(false)
 
   const filterValue = useDebound({ value: filter })
 
@@ -56,7 +50,7 @@ function UserList() {
   useEffect(() => {
     async function getUsers(url: string) {
       try {
-        const res = await client.get(url, { page: currentPage })
+        const res = await client.getUser(url, { page: currentPage })
 
         setUsers(res.records)
         setTotalCount(Math.ceil(res.total))
@@ -69,7 +63,7 @@ function UserList() {
     }
 
     getUsers('http://127.0.0.1:8000/api/users')
-  }, [currentPage])
+  }, [currentPage, isLoading])
 
   const handlePageChange = (page: any) => {
     if (page > 0 && page <= totalPages) {
@@ -78,15 +72,16 @@ function UserList() {
     }
   }
 
-  function deleteUser(id: number) {
-    const res = client.delete()
-    sendRequest('DELETE', apiUrl + '/' + id, JSON.stringify(users[id]))
-      .then(() => {
-        setShowModal(!showModal)
-        toast.info('xoa thanh cong')
-        setIsLoading(true)
-      })
-      .catch((error: any) => console.log(error))
+  async function deleteUser(id: number) {
+    try {
+      await client.deleteUser(id)
+
+      setShowModal(!showModal)
+      toast.info('xoa thanh cong')
+      setIsLoading(true)
+    } catch (err: any) {
+      console.log(err)
+    }
   }
 
   return (
