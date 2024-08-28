@@ -4,7 +4,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import { UserContext } from '../context/UserContext'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
-import React from 'react'
 import { getAccessToken } from '../lib/helpers/index'
 
 export function NavBar() {
@@ -59,11 +58,9 @@ export function NavBar() {
             )}
           </ul>
           <ul className="navbar-nav ml-auto mb-2 mb-lg-0">
-            {user && user.email && (
-              <span className="nav-link">{user.email}</span>
-            )}
+            {user.email && <span className="nav-link">{user.email}</span>}
             <NavDropdown title="Setting">
-              {user && user.auth === true ? (
+              {getAccessToken() ? (
                 <NavDropdown.Item onClick={() => handleLogout()}>
                   Logout
                 </NavDropdown.Item>

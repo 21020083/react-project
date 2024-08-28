@@ -3,6 +3,7 @@ import { toast } from 'react-toastify'
 import { useNavigate } from 'react-router-dom'
 import { UserContext } from '../context/UserContext.jsx'
 import { baseRequest } from '../clients/core/axiosConfig.js'
+import { getAccessToken } from '../lib/helpers/index.js'
 
 export default function Login() {
   const navigator = useNavigate()
@@ -15,7 +16,7 @@ export default function Login() {
   const error = useRef('')
 
   useEffect(() => {
-    let token = localStorage.getItem('authToken')
+    let token = getAccessToken()
     if (token) {
       // toast.success('thanh cong')
       navigator('/')

@@ -4,7 +4,7 @@ import {
   setAccessToken,
   setRefreshToken,
 } from '../lib/helpers'
-import React, { ReactNode, useState } from 'react'
+import React, { useState } from 'react'
 
 interface User {
   email: string
@@ -34,19 +34,15 @@ const UserProvider = ({ children }: any) => {
     }))
     setAccessToken(access_token)
     setRefreshToken(refresh_token)
-    localStorage.setItem('authToken', access_token)
-    localStorage.setItem('email', email)
   }
 
   const logout = () => {
     removeRefreshToken()
     removeAccessToken()
-    localStorage.removeItem('authToken')
-    localStorage.removeItem('email')
 
     setUser(() => ({
       email: '',
-      auth: true,
+      auth: false,
     }))
   }
 

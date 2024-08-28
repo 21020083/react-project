@@ -73,8 +73,6 @@ const refreshTokenHandle = async (): Promise<string | undefined> => {
 
     return access_token
   } catch (error) {
-    removeAccessToken()
-    removeRefreshToken()
     // [TODO]: Remove accessToken
     // [TODO]: Remove refreshToken
     return undefined

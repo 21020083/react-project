@@ -4,16 +4,17 @@ import App from './App.js'
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap/dist/js/bootstrap.js'
 import { UserProvider } from './context/UserContext.jsx'
-import { BrowserRouter } from 'react-router-dom'
+import { Provider } from 'react-redux'
+import { store } from './redux/store'
 
 const root = document.getElementById('root') as Element
 
 ReactDOM.createRoot(root).render(
   <React.StrictMode>
     <UserProvider>
-      <BrowserRouter>
+      <Provider store={store}>
         <App />
-      </BrowserRouter>
+      </Provider>
     </UserProvider>
   </React.StrictMode>,
 )
